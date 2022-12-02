@@ -55,6 +55,8 @@ fn build_status_go_lib(go_bin: &str, project_dir: &Path) {
         .expect("`./library/main.go` file could not be created");
     file.write_all(&output.stdout).unwrap();
 
+    println!("HERE2={}", out_dir.display());
+
     cmd.env("CGO_ENABLED", "1")
         .arg("build")
         .arg("-buildmode=c-archive")
