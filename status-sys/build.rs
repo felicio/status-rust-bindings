@@ -41,12 +41,6 @@ fn build_status_go_lib(go_bin: &str, project_dir: &Path) {
 
     let mut cmd = Command::new(go_bin);
 
-    // cmd.arg("run")
-    //     .arg("./cmd/library/")
-    //     .stdout(Stdio::from(File::create("./library/main.go").unwrap()))
-    //     .output()
-    //     .expect("`./library/main.go` file could not be created");
-
     let mut file = File::create("./library/main.go").unwrap();
     let output = cmd
         .arg("run")
@@ -55,9 +49,9 @@ fn build_status_go_lib(go_bin: &str, project_dir: &Path) {
         .expect("`./library/main.go` file could not be created");
     file.write_all(&output.stdout).unwrap();
 
-    println!("HERE2={}", out_dir.display());
+    let mut cmd2 = Command::new(go_bin);
 
-    cmd.env("CGO_ENABLED", "1")
+    cmd2.env("CGO_ENABLED", "1")
         .arg("build")
         .arg("-buildmode=c-archive")
         .arg("-o")
@@ -67,10 +61,10 @@ fn build_status_go_lib(go_bin: &str, project_dir: &Path) {
     // Setting `GOCACHE=/tmp/` for crates.io job that builds documentation
     // when a crate is being published or updated.
     if std::env::var("DOCS_RS").is_ok() {
-        cmd.env("GOCACHE", "/tmp/");
+        cmd2.env("GOCACHE", "/tmp/");
     }
 
-    cmd.status()
+    cmd2.status()
         .map_err(|e| println!("cargo:warning=go build failed due to: {}", e))
         .unwrap();
 
