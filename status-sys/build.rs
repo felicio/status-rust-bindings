@@ -1,6 +1,7 @@
 use std::env;
 use std::env::set_current_dir;
-use std::fs::create_dir_all;
+use std::fs::{create_dir_all, File};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -34,29 +35,31 @@ fn build_status_go_lib(go_bin: &str, project_dir: &Path) {
     // https://github.com/status-im/status-go/blob/0f7c9f52d87b0ec13da4d7a52c5779fc0362a5ac/Makefile#L144-L155
     let out_dir: PathBuf = env::var_os("OUT_DIR").unwrap().into();
     let vendor_path = project_dir.join("vendor");
+
     set_current_dir(vendor_path).expect("Moving to vendor dir");
     create_dir_all("./library").expect("`./library` dir could not be created");
 
     let mut cmd = Command::new(go_bin);
 
-    // Command::new(go_bin)
-    //     .arg("run")
-    //     .arg("./cmd/library/*.go > ./library/main.go");
-    // Command::new(go_bin)
-
-    // cmd.arg("run").arg("./cmd/library/*.go > ./library/main.go");
     // cmd.arg("run")
     //     .arg("./cmd/library/")
-    //     // .arg(">")
-    //     // .arg("./library/main.go");
-    //     .stdout(Stdio::null());
+    //     .stdout(Stdio::from(File::create("./library/main.go").unwrap()))
+    //     .output()
+    //     .expect("`./library/main.go` file could not be created");
+
+    let mut file = File::create("./library/main.go").unwrap();
+    let output = cmd
+        .arg("run")
+        .arg("./cmd/library/")
+        .output()
+        .expect("`./library/main.go` file could not be created");
+    file.write_all(&output.stdout).unwrap();
 
     cmd.env("CGO_ENABLED", "1")
         .arg("build")
         .arg("-buildmode=c-archive")
         .arg("-o")
-        // .arg("./build/lib/libstatus.a")
-        .arg(out_dir.join("libgowaku.a"))
+        .arg(out_dir.join("libstatus.a"))
         .arg("./library"); // /statusgo-lib; /library
 
     // Setting `GOCACHE=/tmp/` for crates.io job that builds documentation
@@ -72,11 +75,8 @@ fn build_status_go_lib(go_bin: &str, project_dir: &Path) {
     set_current_dir(project_dir).expect("Going back to project dir");
 }
 
-// fn generate_bindgen_code(project_dir: &Path) {
 fn generate_bindgen_code() {
     let lib_dir: PathBuf = env::var_os("OUT_DIR").unwrap().into();
-
-    // let lib_dir = project_dir.join("vendor/build/lib");
 
     println!("cargo:rustc-link-search={}", lib_dir.display());
     println!("cargo:rustc-link-lib=static=status");
@@ -108,6 +108,5 @@ fn main() {
     let project_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
     build_status_go_lib(&go_bin, &project_dir);
-    // generate_bindgen_code(&project_dir);
     generate_bindgen_code();
 }
