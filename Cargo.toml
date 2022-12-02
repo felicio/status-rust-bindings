@@ -1,5 +1,6 @@
 [workspace]
 
 members = [
+    "status-bindings",
     "status-sys",
 ]
