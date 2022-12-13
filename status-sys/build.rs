@@ -53,6 +53,7 @@ fn build_status_go_lib(go_bin: &str, project_dir: &Path) {
 
     cmd2.env("CGO_ENABLED", "1")
         .arg("build")
+        .arg("-tags=gowaku_skip_migrations")
         .arg("-buildmode=c-archive")
         .arg("-o")
         .arg(out_dir.join("libstatus.a"))
